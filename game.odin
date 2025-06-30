@@ -9,7 +9,7 @@ SCREEN_WIDTH :: 800
 SCREEN_HEIGHT :: 450
 MAX_ENTITIES :: 100000
 
-GRID_CELL_SIZE :: 32
+GRID_CELL_SIZE :: 15
 GRID_WIDTH :: (SCREEN_WIDTH / GRID_CELL_SIZE) + 1
 GRID_HEIGHT :: (SCREEN_HEIGHT / GRID_CELL_SIZE) + 1
 
@@ -20,9 +20,10 @@ EntityType :: enum {
 }
 
 RenderInfo :: struct {
-	type:  EntityType,
-	color: rl.Color,
-	size:  f32,
+	type:          EntityType,
+	color:         rl.Color,
+	size:          f32,
+	to_be_removed: bool,
 }
 
 Movement :: struct {
@@ -54,7 +55,7 @@ main :: proc() {
 	spatial_grid: [GRID_WIDTH][GRID_HEIGHT][dynamic]i32
 	for x in 0 ..< GRID_WIDTH {
 		for y in 0 ..< GRID_HEIGHT {
-			spatial_grid[x][y] = make([dynamic]i32)
+			spatial_grid[x][y] = make([dynamic]i32, 0, 128)
 		}
 	}
 
@@ -103,6 +104,19 @@ main :: proc() {
 			movement_soa[0].direction.x = 1
 		}
 		movement_soa[0].direction = rl.Vector2Normalize(movement_soa[0].direction)
+
+		for i in 0 ..< current_no_entities {
+			if render_soa[i].to_be_removed {
+				last_index := current_no_entities - 1
+
+				position_soa[i] = position_soa[last_index]
+				movement_soa[i] = movement_soa[last_index]
+				render_soa[i] = render_soa[last_index]
+
+				current_no_entities -= 1
+			}
+		}
+
 
 		if enemy_spawn_cooldown <= 0 && current_no_entities < MAX_ENTITIES {
 
@@ -281,21 +295,8 @@ check_collisions :: proc(
 									},
 								) {
 
-									remove_entity(
-										bullet_idx,
-										current_no_entities,
-										position_soa,
-										movement_soa,
-										render_soa,
-									)
-
-									remove_entity(
-										enemy_idx,
-										current_no_entities,
-										position_soa,
-										movement_soa,
-										render_soa,
-									)
+									render_soa[bullet_idx].to_be_removed = true
+									render_soa[enemy_idx].to_be_removed = true
 
 								}
 							}
@@ -305,21 +306,4 @@ check_collisions :: proc(
 			}
 		}
 	}
-}
-
-
-remove_entity :: proc(
-	index: i32,
-	current_no_entities: ^int,
-	position_soa: ^#soa[dynamic]rl.Vector2,
-	movement_soa: ^#soa[dynamic]Movement,
-	render_soa: ^#soa[dynamic]RenderInfo,
-) {
-	last_index := current_no_entities^ - 1
-
-	position_soa[index] = position_soa[last_index]
-	movement_soa[index] = movement_soa[last_index]
-	render_soa[index] = render_soa[last_index]
-
-	current_no_entities^ -= 1
 }
