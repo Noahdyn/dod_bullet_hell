@@ -7,7 +7,7 @@ import rl "vendor:raylib"
 
 SCREEN_WIDTH :: 800
 SCREEN_HEIGHT :: 450
-MAX_ENTITIES :: 100000
+MAX_ENTITIES :: 2000000
 
 GRID_CELL_SIZE :: 15
 GRID_WIDTH :: (SCREEN_WIDTH / GRID_CELL_SIZE) + 1
@@ -77,8 +77,6 @@ main :: proc() {
 
 
 	for !rl.WindowShouldClose() {
-		fmt.println(current_no_entities)
-		fmt.println(rl.GetFPS())
 		dt = rl.GetFrameTime()
 
 		game_time += dt
@@ -118,9 +116,9 @@ main :: proc() {
 		}
 
 
-		if enemy_spawn_cooldown <= 0 && current_no_entities < MAX_ENTITIES {
+		if enemy_spawn_cooldown <= 0 && current_no_entities < MAX_ENTITIES && game_time >= 12 {
 
-			for i in 0 ..< 16 {
+			for i in 0 ..< 2048 {
 				if current_no_entities >= MAX_ENTITIES do break
 				position_soa[current_no_entities] = get_rand_pos_around_pt(
 					position_soa[0],
@@ -128,7 +126,7 @@ main :: proc() {
 					400,
 				)
 				movement_soa[current_no_entities] = {
-					speed     = 55,
+					speed     = 35,
 					direction = {0, 0},
 				}
 				render_soa[current_no_entities] = {
@@ -195,6 +193,7 @@ main :: proc() {
 
 		rl.ClearBackground(rl.DARKGRAY)
 
+
 		for i := 0; i < current_no_entities; i += 1 {
 			switch render_soa[i].type {
 			case .PLAYER:
@@ -210,6 +209,8 @@ main :: proc() {
 			}
 		}
 
+		rl.DrawText(fmt.ctprintf("%d", current_no_entities), 10, 20, 24, rl.WHITE)
+		rl.DrawText(fmt.ctprintf("%d", rl.GetFPS()), SCREEN_WIDTH - 80, 20, 24, rl.WHITE)
 		rl.EndDrawing()
 
 	}
@@ -254,9 +255,38 @@ check_collisions :: proc(
 			for i in 0 ..< len(cell) {
 				entity1_idx := cell[i]
 				if int(entity1_idx) >= current_no_entities^ do continue
+				if render_soa[entity1_idx].type != EntityType.BULLET do continue
 
-				for dx in -1 ..= 1 {
-					for dy in -1 ..= 1 {
+				maxx, minx, maxy, miny: int
+
+				modx := int(position_soa[entity1_idx].x) % GRID_CELL_SIZE
+
+				if modx == 0 {
+					minx = 0
+					maxx = 0
+				} else if modx < 8 {
+					minx = -1
+					maxx = 0
+				} else {
+					minx = 0
+					maxx = 1
+				}
+				mody := int(position_soa[entity1_idx].x) % GRID_CELL_SIZE
+
+				if mody == 0 {
+					miny = 0
+					maxy = 0
+				} else if modx < 8 {
+					miny = -1
+					maxy = 0
+				} else {
+					miny = 0
+					maxy = 1
+				}
+
+
+				for dx in minx ..= maxx {
+					for dy in miny ..= maxy {
 						check_x := x + dx
 						check_y := y + dy
 
@@ -266,6 +296,7 @@ check_collisions :: proc(
 
 						for entity2_i in 0 ..< len(check_cell) {
 							entity2_idx := check_cell[entity2_i]
+							if render_soa[entity2_idx].type != EntityType.ENEMY do continue
 							if int(entity2_idx) >= current_no_entities^ do continue
 							if entity1_idx == entity2_idx do continue
 
