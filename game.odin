@@ -55,6 +55,10 @@ main :: proc() {
 	render_soa = make(#soa[dynamic]RenderInfo, MAX_ENTITIES)
 	defer delete(render_soa)
 
+	entities_to_remove: [dynamic]i32
+	reserve(&entities_to_remove, 20000)
+	defer delete(entities_to_remove)
+
 	spatial_grid: [GRID_WIDTH][GRID_HEIGHT][dynamic]i32
 	for x in 0 ..< GRID_WIDTH {
 		for y in 0 ..< GRID_HEIGHT {
