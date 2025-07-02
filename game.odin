@@ -7,11 +7,14 @@ import rl "vendor:raylib"
 
 SCREEN_WIDTH :: 800
 SCREEN_HEIGHT :: 450
-MAX_ENTITIES :: 2000000
+MAX_ENTITIES :: 300000
 
 GRID_CELL_SIZE :: 15
 GRID_WIDTH :: (SCREEN_WIDTH / GRID_CELL_SIZE) + 1
 GRID_HEIGHT :: (SCREEN_HEIGHT / GRID_CELL_SIZE) + 1
+
+INITIAL_SPAWN_COOLDOWN :: 0.12
+INITIAL_BULLET_COOLDOWN :: 0.075
 
 EntityType :: enum {
 	PLAYER,
@@ -36,8 +39,8 @@ main :: proc() {
 	dt: f32
 	game_time: f32 = 0
 	current_no_entities := 0
-	enemy_spawn_cooldown: f32 = 0.12
-	bullet_timer: f32 = 0.3
+	enemy_spawn_cooldown: f32 = INITIAL_SPAWN_COOLDOWN
+	bullet_timer: f32 = INITIAL_BULLET_COOLDOWN
 	current_bullet_angle: i32 = 0
 
 	movement_soa: #soa[dynamic]Movement
@@ -103,10 +106,10 @@ main :: proc() {
 		}
 		movement_soa[0].direction = rl.Vector2Normalize(movement_soa[0].direction)
 
+		//TODO: Remove bool?
 		for i in 0 ..< current_no_entities {
 			if render_soa[i].to_be_removed {
 				last_index := current_no_entities - 1
-
 				position_soa[i] = position_soa[last_index]
 				movement_soa[i] = movement_soa[last_index]
 				render_soa[i] = render_soa[last_index]
@@ -116,9 +119,9 @@ main :: proc() {
 		}
 
 
-		if enemy_spawn_cooldown <= 0 && current_no_entities < MAX_ENTITIES && game_time >= 12 {
+		if enemy_spawn_cooldown <= 0 && current_no_entities < MAX_ENTITIES {
 
-			for i in 0 ..< 2048 {
+			for i in 0 ..< 512 {
 				if current_no_entities >= MAX_ENTITIES do break
 				position_soa[current_no_entities] = get_rand_pos_around_pt(
 					position_soa[0],
@@ -136,7 +139,7 @@ main :: proc() {
 				}
 
 				current_no_entities += 1
-				enemy_spawn_cooldown = 0.05
+				enemy_spawn_cooldown = INITIAL_SPAWN_COOLDOWN
 			}
 
 		}
@@ -162,7 +165,7 @@ main :: proc() {
 				current_no_entities += 1
 			}
 
-			bullet_timer = 0.072
+			bullet_timer = INITIAL_BULLET_COOLDOWN
 		}
 
 		for i := 1; i < current_no_entities; i += 1 {
