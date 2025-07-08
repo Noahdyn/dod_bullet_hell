@@ -13,7 +13,7 @@ GRID_CELL_SIZE :: 15
 GRID_WIDTH :: (SCREEN_WIDTH / GRID_CELL_SIZE) + 1
 GRID_HEIGHT :: (SCREEN_HEIGHT / GRID_CELL_SIZE) + 1
 
-INITIAL_SPAWN_COOLDOWN :: 0.12
+INITIAL_SPAWN_COOLDOWN :: 0.052
 INITIAL_BULLET_COOLDOWN :: 0.075
 
 EntityType :: enum {
@@ -78,7 +78,6 @@ main :: proc() {
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Bullet Hell")
 	rl.SetTargetFPS(60)
 
-
 	for !rl.WindowShouldClose() {
 		dt = rl.GetFrameTime()
 
@@ -91,7 +90,6 @@ main :: proc() {
 				clear(&spatial_grid[x][y])
 			}
 		}
-
 
 		movement_soa[0].direction = {0, 0}
 		if rl.IsKeyDown(rl.KeyboardKey.UP) {
@@ -118,10 +116,9 @@ main :: proc() {
 			}
 		}
 
-
 		if enemy_spawn_cooldown <= 0 && current_no_entities < MAX_ENTITIES {
 
-			for i in 0 ..< 512 {
+			for i in 0 ..< 1200 {
 				if current_no_entities >= MAX_ENTITIES do break
 				position_soa[current_no_entities] = get_rand_pos_around_pt(
 					position_soa[0],
@@ -137,19 +134,16 @@ main :: proc() {
 					color = rl.BROWN,
 					size  = 15,
 				}
-
 				current_no_entities += 1
 				enemy_spawn_cooldown = INITIAL_SPAWN_COOLDOWN
 			}
-
 		}
 
-
 		if bullet_timer <= 0 && current_no_entities < MAX_ENTITIES {
-			for i in 0 ..< 22 {
+			for i in 0 ..< 13 {
 				if current_no_entities >= MAX_ENTITIES do break
 
-				angle := f32(i) * (2 * math.PI / 22)
+				angle := f32(i) * (2 * math.PI / 13)
 				bullet_offset := rl.Vector2{20 * math.cos(angle), 20 * math.sin(angle)}
 
 				position_soa[current_no_entities] = position_soa[0] + bullet_offset
@@ -168,9 +162,10 @@ main :: proc() {
 			bullet_timer = INITIAL_BULLET_COOLDOWN
 		}
 
+		player_pos := position_soa[0]
 		for i := 1; i < current_no_entities; i += 1 {
 			if render_soa[i].type == EntityType.ENEMY {
-				dir := position_soa[0] - position_soa[i]
+				dir := player_pos - position_soa[i]
 				movement_soa[i].direction = rl.Vector2Normalize(dir)
 			}
 		}
