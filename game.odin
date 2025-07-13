@@ -269,7 +269,7 @@ check_collisions :: proc(
 					minx = 0
 					maxx = 1
 				}
-				mody := int(position_soa[entity1_idx].x) % GRID_CELL_SIZE
+				mody := int(position_soa[entity1_idx].y) % GRID_CELL_SIZE
 
 				if mody == 0 {
 					miny = 0
